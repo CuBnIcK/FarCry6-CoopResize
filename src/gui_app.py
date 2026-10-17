@@ -26,8 +26,8 @@ class CoOpPatcherGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title(f"{APP_TITLE} {APP_VERSION}")
-        self.root.minsize(740, 720)
-        self.root.geometry("800x740")
+        self.root.minsize(660, 520)
+        self.root.geometry("680x540")
 
         # Application state
         self.current_dll_path: Optional[Path] = None
@@ -71,13 +71,13 @@ class CoOpPatcherGUI:
 
         # 1. Header Frame
         header_frame = ttk.Frame(main_frame)
-        header_frame.pack(fill=tk.X, pady=(0, 10))
+        header_frame.pack(fill=tk.X, pady=(0, 6))
 
         title_lbl = ttk.Label(header_frame, text=APP_TITLE, style="Title.TLabel")
         title_lbl.pack(anchor=tk.W)
         sub_lbl = ttk.Label(
             header_frame,
-            text=f"Campaign Co-op Capacity (Tri-Gate) & Cutscene Camera Fix • {APP_VERSION}",
+            text=f"Campaign Co-op Capacity & Cutscene Camera Fix • {APP_VERSION}",
             style="Subtitle.TLabel",
             foreground="#555555",
         )
@@ -96,8 +96,8 @@ class CoOpPatcherGUI:
         self.alert_lbl.pack(fill=tk.X)
 
         # 2. Installation Path Frame
-        path_group = ttk.LabelFrame(main_frame, text=" Far Cry 5 Game Installation ", padding=10)
-        path_group.pack(fill=tk.X, pady=(0, 8))
+        path_group = ttk.LabelFrame(main_frame, text=" Far Cry 5 Game Location ", padding=8)
+        path_group.pack(fill=tk.X, pady=(0, 6))
 
         path_row = ttk.Frame(path_group)
         path_row.pack(fill=tk.X)
@@ -112,106 +112,81 @@ class CoOpPatcherGUI:
         self.btn_browse = ttk.Button(path_row, text="Browse...", command=self.on_browse)
         self.btn_browse.pack(side=tk.LEFT)
 
-        self.platform_lbl = ttk.Label(path_group, text="Platform: Unknown", foreground="#666666")
-        self.platform_lbl.pack(anchor=tk.W, pady=(4, 0))
+        self.platform_lbl = ttk.Label(path_group, text="Platform: Unknown", foreground="#666666", font=("Segoe UI", 8))
+        self.platform_lbl.pack(anchor=tk.W, pady=(2, 0))
 
-        # 3. Status & Diagnostic Card
-        status_group = ttk.LabelFrame(main_frame, text=" Binary Status & Integrity ", padding=10)
-        status_group.pack(fill=tk.X, pady=(0, 8))
+        # 3. Status Card (Clean & Compact)
+        status_group = ttk.LabelFrame(main_frame, text=" Current Game Status ", padding=8)
+        status_group.pack(fill=tk.X, pady=(0, 6))
 
-        # Status badge row
-        badge_row = ttk.Frame(status_group)
-        badge_row.pack(fill=tk.X, pady=(0, 4))
+        status_row = ttk.Frame(status_group)
+        status_row.pack(fill=tk.X)
 
-        ttk.Label(badge_row, text="Current State: ", style="Bold.TLabel").pack(side=tk.LEFT)
-        self.status_badge_lbl = ttk.Label(badge_row, text="NOT INSPECTED", style="StatusBadge.TLabel")
-        self.status_badge_lbl.pack(side=tk.LEFT)
+        ttk.Label(status_row, text="Status: ", style="Bold.TLabel").pack(side=tk.LEFT)
+        self.status_badge_lbl = ttk.Label(status_row, text="NOT INSPECTED", style="StatusBadge.TLabel")
+        self.status_badge_lbl.pack(side=tk.LEFT, padx=(0, 16))
 
-        # Message row
-        self.status_msg_lbl = ttk.Label(status_group, text="Select or auto-detect a Far Cry 5 installation.", wraplength=720)
-        self.status_msg_lbl.pack(anchor=tk.W, pady=(0, 4))
+        self.backup_lbl = ttk.Label(status_row, text="Backup: None", foreground="#666666")
+        self.backup_lbl.pack(side=tk.LEFT)
 
-        # SHA-256 and Backup status
-        hash_row = ttk.Frame(status_group)
-        hash_row.pack(fill=tk.X, pady=(2, 0))
+        self.status_msg_lbl = ttk.Label(status_group, text="Select or auto-detect a Far Cry 5 installation.", wraplength=640, foreground="#666666", font=("Segoe UI", 8))
+        self.status_msg_lbl.pack(anchor=tk.W, pady=(2, 0))
 
-        ttk.Label(hash_row, text="SHA-256: ", style="Bold.TLabel").pack(side=tk.LEFT)
-        self.sha_lbl = ttk.Label(hash_row, text="N/A", style="Mono.TLabel")
-        self.sha_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.sha_lbl = ttk.Label(status_group, text="")  # Maintained for internal reference
 
-        self.backup_lbl = ttk.Label(status_group, text="Backup (.bak): None", foreground="#666666")
-        self.backup_lbl.pack(anchor=tk.W, pady=(2, 0))
-
-        # 4. Patch Configuration Frame
-        config_group = ttk.LabelFrame(main_frame, text=" Co-op Configuration ", padding=10)
+        # 4. Patch Options Frame (Clean & Simple)
+        config_group = ttk.LabelFrame(main_frame, text=" Patch Options ", padding=10)
         config_group.pack(fill=tk.X, pady=(0, 8))
 
-        # Row 0: Mode / Role Selection
-        mode_frame = ttk.Frame(config_group)
-        mode_frame.pack(fill=tk.X, pady=(0, 6))
+        # Option 1: Expand Campaign Co-op
+        opt1_frame = ttk.Frame(config_group)
+        opt1_frame.pack(fill=tk.X, pady=(0, 2))
 
-        ttk.Label(mode_frame, text="Patch Mode: ", style="Bold.TLabel").pack(side=tk.LEFT, padx=(0, 8))
-
-        self.mode_var = tk.StringVar(value="host")
-
-        self.rb_host = ttk.Radiobutton(
-            mode_frame,
-            text="Host (Expand Lobby Capacity + Camera Fix)",
-            variable=self.mode_var,
-            value="host",
-            command=self._on_mode_changed,
+        self.expand_var = tk.BooleanVar(value=True)
+        self.chk_expand = ttk.Checkbutton(
+            opt1_frame,
+            text="Expand Campaign Co-op",
+            variable=self.expand_var,
+            command=self._on_expand_toggled,
         )
-        self.rb_host.pack(side=tk.LEFT, padx=(0, 16))
-
-        self.rb_guest = ttk.Radiobutton(
-            mode_frame,
-            text="Guest / Client (Camera Fix ONLY — Keep Original Lobby)",
-            variable=self.mode_var,
-            value="guest",
-            command=self._on_mode_changed,
-        )
-        self.rb_guest.pack(side=tk.LEFT)
-
-        # Row A: Capacity Selector
-        cap_row = ttk.Frame(config_group)
-        cap_row.pack(fill=tk.X, pady=(0, 4))
-
-        ttk.Label(cap_row, text="Target Capacity: ", style="Bold.TLabel").pack(side=tk.LEFT, padx=(0, 8))
+        self.chk_expand.pack(side=tk.LEFT, padx=(0, 10))
 
         self.cap_options = [
-            f"{n} Players [{pe.CAPACITY_CONFIG[n]['badge']}]" for n in range(2, 17)
-        ]
-        # Default: 3 Players (index 1)
-        self.cap_var = tk.StringVar(value=self.cap_options[1])
+            "3 Players (Recommended)",
+            "4 Players (Experimental)",
+        ] + [f"{n} Players (Untested)" for n in range(5, 17)]
+
+        self.cap_var = tk.StringVar(value=self.cap_options[0])
         self.cap_combo = ttk.Combobox(
-            cap_row,
+            opt1_frame,
             textvariable=self.cap_var,
             values=self.cap_options,
             state="readonly",
-            width=38,
+            width=26,
             font=("Segoe UI", 9),
         )
         self.cap_combo.pack(side=tk.LEFT)
         self.cap_combo.bind("<<ComboboxSelected>>", self._on_capacity_changed)
 
-        # Capacity description label
-        self.cap_desc_lbl = ttk.Label(
+        self.expand_sub_lbl = ttk.Label(
             config_group,
-            text=pe.CAPACITY_CONFIG[3]["description"],
-            wraplength=720,
-            foreground="#155724",
-            font=("Segoe UI", 9, "italic"),
+            text="Allows 3 or more players in campaign co-op. (Required for the Host).",
+            foreground="#555555",
+            font=("Segoe UI", 8),
         )
-        self.cap_desc_lbl.pack(anchor=tk.W, pady=(2, 6))
+        self.expand_sub_lbl.pack(anchor=tk.W, padx=(22, 0), pady=(0, 6))
 
-        # Row B: Camera Fix Checkbox
-        cam_row = ttk.Frame(config_group)
-        cam_row.pack(fill=tk.X, pady=(4, 0))
+        # Separator
+        ttk.Separator(config_group, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=(2, 6))
 
-        self.camera_var = tk.BooleanVar(value=True)  # Automatically checked by default!
+        # Option 2: Fix Cutscene Cameras
+        opt2_frame = ttk.Frame(config_group)
+        opt2_frame.pack(fill=tk.X, pady=(2, 2))
+
+        self.camera_var = tk.BooleanVar(value=True)
         self.chk_camera = ttk.Checkbutton(
-            cam_row,
-            text="Fix Cutscene Cameras (Recommended / Experimental)",
+            opt2_frame,
+            text="Fix Cutscene Cameras",
             variable=self.camera_var,
             command=self._on_camera_toggled,
         )
@@ -219,12 +194,11 @@ class CoOpPatcherGUI:
 
         self.cam_sub_lbl = ttk.Label(
             config_group,
-            text="Enables cutscene camera takeover for extra players (Players 3 & 4). Recommended for all co-op friends on Windows to prevent camera bugs.",
-            wraplength=720,
+            text="Fixes cutscene cameras for Players 3 & 4 so they don't remain in 1st-person. (Recommended for Host and Guests).",
             foreground="#155724",
             font=("Segoe UI", 8),
         )
-        self.cam_sub_lbl.pack(anchor=tk.W, pady=(0, 4))
+        self.cam_sub_lbl.pack(anchor=tk.W, padx=(22, 0), pady=(0, 2))
 
         # 5. Action Buttons Frame
         action_row = ttk.Frame(main_frame)
@@ -232,7 +206,7 @@ class CoOpPatcherGUI:
 
         self.btn_patch = ttk.Button(
             action_row,
-            text="✔  Apply Co-op Patch",
+            text="✔  Apply Co-op Patch (3 Players)",
             style="Action.TButton",
             command=self.on_apply_patch,
         )
@@ -248,14 +222,14 @@ class CoOpPatcherGUI:
 
         self.btn_verify = ttk.Button(
             action_row,
-            text="🔍  Verify Files",
+            text="🔍  Verify",
             style="Action.TButton",
             command=self.on_verify,
         )
-        self.btn_verify.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.btn_verify.pack(side=tk.LEFT)
 
         # 6. Activity Log Console
-        log_group = ttk.LabelFrame(main_frame, text=" Activity Log ", padding=8)
+        log_group = ttk.LabelFrame(main_frame, text=" Activity Log ", padding=6)
         log_group.pack(fill=tk.BOTH, expand=True)
 
         self.log_text = tk.Text(
@@ -266,7 +240,7 @@ class CoOpPatcherGUI:
             fg="#d4d4d4",
             insertbackground="white",
             relief=tk.FLAT,
-            height=10,
+            height=6,
         )
         self.log_scroll = ttk.Scrollbar(log_group, orient=tk.VERTICAL, command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=self.log_scroll.set)
@@ -282,7 +256,7 @@ class CoOpPatcherGUI:
 
         # Bottom utility buttons
         bottom_row = ttk.Frame(main_frame)
-        bottom_row.pack(fill=tk.X, pady=(4, 0))
+        bottom_row.pack(fill=tk.X, pady=(2, 0))
 
         ttk.Button(bottom_row, text="Clear Log", command=self._clear_log).pack(side=tk.RIGHT)
         ttk.Button(bottom_row, text="Copy Log", command=self._copy_log).pack(side=tk.RIGHT, padx=(0, 4))
@@ -311,6 +285,12 @@ class CoOpPatcherGUI:
         self.btn_verify.configure(state=state)
         self.btn_auto.configure(state=state)
         self.btn_browse.configure(state=state)
+        self.chk_expand.configure(state=state)
+        self.chk_camera.configure(state=state)
+        if not busy and not self.expand_var.get():
+            self.cap_combo.configure(state="disabled")
+        else:
+            self.cap_combo.configure(state="readonly" if not busy else "disabled")
 
     def _run_threaded(self, target_func, *args):
         if self.is_busy:
@@ -347,61 +327,27 @@ class CoOpPatcherGUI:
         self.root.after(1500, self._poll_game_process)
 
     # ==========================================================================
-    # Capacity Selection Handler
+    # Options & Capacity Handlers
     # ==========================================================================
 
-    def _on_mode_changed(self):
-        mode = self.mode_var.get()
-        if mode == "guest":
-            for opt in self.cap_options:
-                if opt.startswith("2 Players"):
-                    self.cap_var.set(opt)
-                    break
+    def _on_expand_toggled(self):
+        enabled = self.expand_var.get()
+        if enabled:
+            self.cap_combo.configure(state="readonly")
+            self.expand_sub_lbl.configure(
+                text="Allows 3 or more players in campaign co-op. (Required for the Host).",
+                foreground="#555555",
+            )
+        else:
             self.cap_combo.configure(state="disabled")
-            self.cap_desc_lbl.configure(
-                text="[Guest Mode] Original 2-player campaign lobby is preserved untouched (no lobby edits). Only the Cutscene Camera Fix is applied so you receive cinematic cameras when joining 3P/4P hosts.",
+            self.expand_sub_lbl.configure(
+                text="Keeps original 2-player campaign lobby. (Ideal for Guests who only want the camera fix).",
                 foreground="#007acc",
             )
-            self.btn_patch.configure(text="✔  Apply Camera Fix Only (Guest Mode)")
-            self.camera_var.set(True)
-            self._log("Switched to Guest Mode: Camera Fix Only (Lobby capacity left original at 2 players).", "INFO")
-        else:
-            if self.cap_var.get().startswith("2 Players"):
-                for opt in self.cap_options:
-                    if opt.startswith("3 Players"):
-                        self.cap_var.set(opt)
-                        break
-            self.cap_combo.configure(state="readonly")
-            self._on_capacity_changed()
-            cap = self.get_selected_capacity()
-            self.btn_patch.configure(text=f"✔  Apply Co-op Patch ({cap} Players)")
-            self._log(f"Switched to Host Mode: Configuring lobby capacity ({cap} Players) + Camera Fix.", "INFO")
+        self._update_apply_button_text()
 
     def _on_capacity_changed(self, event=None):
-        selected_str = self.cap_var.get()
-        try:
-            n = int(selected_str.split()[0])
-            if n == 2:
-                if self.mode_var.get() != "guest":
-                    self.mode_var.set("guest")
-                    self._on_mode_changed()
-                    return
-            else:
-                if self.mode_var.get() != "host":
-                    self.mode_var.set("host")
-                    self.cap_combo.configure(state="readonly")
-
-            cfg = pe.CAPACITY_CONFIG.get(n, {})
-            desc = cfg.get("description", "")
-            badge = cfg.get("badge", "")
-            tier = cfg.get("tier", "")
-
-            color = "#155724" if tier in ("VERIFIED", "ORIGINAL") else "#856404"
-            self.cap_desc_lbl.configure(text=f"[{badge}] {desc}", foreground=color)
-            if self.mode_var.get() == "host":
-                self.btn_patch.configure(text=f"✔  Apply Co-op Patch ({n} Players)")
-        except Exception:
-            pass
+        self._update_apply_button_text()
 
     def _on_camera_toggled(self):
         self.user_manually_toggled_camera = True
@@ -410,9 +356,21 @@ class CoOpPatcherGUI:
         self._log(f"Cutscene camera fix option set to: {state_str}", "INFO")
         if not checked:
             self._log("Notice: Cutscene Camera Fix disabled. Additional players (Players 3 & 4) will experience disrupted cutscene cameras unless patched locally.", "WARNING")
+        self._update_apply_button_text()
+
+    def _update_apply_button_text(self):
+        expand = self.expand_var.get()
+        cam = self.camera_var.get()
+        if expand:
+            cap = self.get_selected_capacity()
+            self.btn_patch.configure(text=f"✔  Apply Co-op Patch ({cap} Players)")
+        elif cam:
+            self.btn_patch.configure(text="✔  Apply Camera Fix Only")
+        else:
+            self.btn_patch.configure(text="✔  Apply Changes")
 
     def get_selected_capacity(self) -> int:
-        if self.mode_var.get() == "guest":
+        if not self.expand_var.get():
             return 2
         selected_str = self.cap_var.get()
         try:
@@ -469,51 +427,35 @@ class CoOpPatcherGUI:
         cap = info.get("capacity")
         cam_applied = info.get("camera_fix_applied", False)
 
-        # Synchronize UI checkbox:
-        # If binary already has camera fix, keep checked.
-        # If user has not manually interacted with the checkbox, keep it checked by default!
-        if cam_applied:
-            self.camera_var.set(True)
-        elif not self.user_manually_toggled_camera:
-            self.camera_var.set(True)
-        else:
-            self.camera_var.set(self.camera_var.get())
-
-        # Synchronize mode and capacity selector if detected
+        # Synchronize UI checkboxes with detected binary status
         if status == "ORIGINAL_CAM_FIX":
-            self.mode_var.set("guest")
-            self._on_mode_changed()
+            self.expand_var.set(False)
+            self.camera_var.set(True)
+            self._on_expand_toggled()
         elif status.startswith("PATCHED_TRI_GATE"):
-            self.mode_var.set("host")
-            self.cap_combo.configure(state="readonly")
+            self.expand_var.set(True)
+            self.camera_var.set(cam_applied)
+            self._on_expand_toggled()
             if cap in range(3, 17):
                 for opt in self.cap_options:
                     if opt.startswith(f"{cap} Players"):
                         self.cap_var.set(opt)
-                        self._on_capacity_changed()
                         break
-        elif cap in range(2, 17):
-            for opt in self.cap_options:
-                if opt.startswith(f"{cap} Players"):
-                    self.cap_var.set(opt)
-                    self._on_capacity_changed()
-                    break
+        elif status == "ORIGINAL_PRISTINE":
+            # Default for pristine binary: expand enabled (3P), camera enabled
+            if not self.user_manually_toggled_camera:
+                self.camera_var.set(True)
+            self._update_apply_button_text()
 
-        # Format Badge
+        # Format Status Badge
         if status == "ORIGINAL_PRISTINE":
-            self.status_badge_lbl.configure(text="PRISTINE (2 Players)", foreground="#0d6efd")
+            self.status_badge_lbl.configure(text="Original Game (2 Players)", foreground="#0d6efd")
         elif status == "ORIGINAL_CAM_FIX":
-            self.status_badge_lbl.configure(text="PRISTINE (2P) + CAMERA FIX", foreground="#198754")
+            self.status_badge_lbl.configure(text="Original 2P + Camera Fix", foreground="#198754")
         elif status == "PATCHED_TRI_GATE":
-            badge_text = f"TRI-GATE PATCHED ({cap} Players)"
-            color = "#198754" if cap == 3 else "#fd7e14"
-            self.status_badge_lbl.configure(text=badge_text, foreground=color)
+            self.status_badge_lbl.configure(text=f"Patched: {cap} Players (No Camera Fix)", foreground="#198754" if cap == 3 else "#fd7e14")
         elif status == "PATCHED_TRI_GATE_CAM":
-            badge_text = f"TRI-GATE ({cap}P) + CAMERA FIX"
-            color = "#198754" if cap == 3 else "#fd7e14"
-            self.status_badge_lbl.configure(text=badge_text, foreground=color)
-        elif status == "PATCHED_TRI_V1":
-            self.status_badge_lbl.configure(text="TRI-GATE V1 (Needs Upgrade)", foreground="#ffc107")
+            self.status_badge_lbl.configure(text=f"Patched: {cap} Players + Camera Fix", foreground="#198754" if cap == 3 else "#fd7e14")
         elif status.startswith("PATCHED_"):
             cam_tag = " + CAM" if cam_applied else ""
             self.status_badge_lbl.configure(text=f"{status} ({cap}P){cam_tag}", foreground="#ffc107")
@@ -526,11 +468,11 @@ class CoOpPatcherGUI:
         # Backup status
         if info.get("backup_exists"):
             if info.get("backup_valid"):
-                self.backup_lbl.configure(text=f"Backup (.bak): Verified Pristine Original (SHA: {info.get('backup_sha')[:16]}...)", foreground="#198754")
+                self.backup_lbl.configure(text="• Backup (.bak): Intact & Verified", foreground="#198754")
             else:
-                self.backup_lbl.configure(text="Backup (.bak): CORRUPT / MISMATCHED", foreground="#dc3545")
+                self.backup_lbl.configure(text="• Backup (.bak): CORRUPT / MISMATCHED", foreground="#dc3545")
         else:
-            self.backup_lbl.configure(text="Backup (.bak): None created yet (will be created automatically on first patch)", foreground="#666666")
+            self.backup_lbl.configure(text="• Backup (.bak): None created yet", foreground="#666666")
 
     # ==========================================================================
     # UI Actions
@@ -580,11 +522,20 @@ class CoOpPatcherGUI:
             messagebox.showerror("Invalid Path", "Please select a valid FC_m64.dll binary.")
             return
 
-        cap = self.get_selected_capacity()
+        expand = self.expand_var.get()
         cam_fix = self.camera_var.get()
+        cap = self.get_selected_capacity()
 
-        # Warning when Cutscene Camera Fix is disabled
-        if not cam_fix:
+        if not expand and not cam_fix:
+            messagebox.showinfo(
+                "No Changes Selected",
+                "Both 'Expand Campaign Co-op' and 'Fix Cutscene Cameras' are unchecked.\n\n"
+                "If you want to restore the game to original unmodified state, please click 'Restore Original Game'.",
+            )
+            return
+
+        # Warning when Cutscene Camera Fix is disabled while expanding campaign
+        if expand and not cam_fix:
             confirm_cam = messagebox.askyesno(
                 "Cutscene Camera Warning",
                 "You have unchecked 'Fix Cutscene Cameras'.\n\n"
