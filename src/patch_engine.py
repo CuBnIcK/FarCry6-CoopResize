@@ -77,8 +77,8 @@ EXPECTED_SIZEOFIMAGE = 0xeea9000
 CAPACITY_CONFIG: Dict[int, Dict[str, str]] = {
     2: {
         "tier": "ORIGINAL",
-        "badge": "Pristine / Guest Only",
-        "description": "Original 2-player campaign capacity. Select this if you are a guest player applying only the Cutscene Camera Fix.",
+        "badge": "Guest / Camera Only",
+        "description": "Original 2-player campaign lobby preserved (no lobby changes). Perfect for guest players who only need the Cutscene Camera Fix.",
         "color": "#007acc",  # Blue
     },
     3: {

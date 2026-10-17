@@ -146,6 +146,32 @@ class CoOpPatcherGUI:
         config_group = ttk.LabelFrame(main_frame, text=" Co-op Configuration ", padding=10)
         config_group.pack(fill=tk.X, pady=(0, 8))
 
+        # Row 0: Mode / Role Selection
+        mode_frame = ttk.Frame(config_group)
+        mode_frame.pack(fill=tk.X, pady=(0, 6))
+
+        ttk.Label(mode_frame, text="Patch Mode: ", style="Bold.TLabel").pack(side=tk.LEFT, padx=(0, 8))
+
+        self.mode_var = tk.StringVar(value="host")
+
+        self.rb_host = ttk.Radiobutton(
+            mode_frame,
+            text="Host (Expand Lobby Capacity + Camera Fix)",
+            variable=self.mode_var,
+            value="host",
+            command=self._on_mode_changed,
+        )
+        self.rb_host.pack(side=tk.LEFT, padx=(0, 16))
+
+        self.rb_guest = ttk.Radiobutton(
+            mode_frame,
+            text="Guest / Client (Camera Fix ONLY — Keep Original Lobby)",
+            variable=self.mode_var,
+            value="guest",
+            command=self._on_mode_changed,
+        )
+        self.rb_guest.pack(side=tk.LEFT)
+
         # Row A: Capacity Selector
         cap_row = ttk.Frame(config_group)
         cap_row.pack(fill=tk.X, pady=(0, 4))
@@ -324,10 +350,47 @@ class CoOpPatcherGUI:
     # Capacity Selection Handler
     # ==========================================================================
 
+    def _on_mode_changed(self):
+        mode = self.mode_var.get()
+        if mode == "guest":
+            for opt in self.cap_options:
+                if opt.startswith("2 Players"):
+                    self.cap_var.set(opt)
+                    break
+            self.cap_combo.configure(state="disabled")
+            self.cap_desc_lbl.configure(
+                text="[Guest Mode] Original 2-player campaign lobby is preserved untouched (no lobby edits). Only the Cutscene Camera Fix is applied so you receive cinematic cameras when joining 3P/4P hosts.",
+                foreground="#007acc",
+            )
+            self.btn_patch.configure(text="✔  Apply Camera Fix Only (Guest Mode)")
+            self.camera_var.set(True)
+            self._log("Switched to Guest Mode: Camera Fix Only (Lobby capacity left original at 2 players).", "INFO")
+        else:
+            if self.cap_var.get().startswith("2 Players"):
+                for opt in self.cap_options:
+                    if opt.startswith("3 Players"):
+                        self.cap_var.set(opt)
+                        break
+            self.cap_combo.configure(state="readonly")
+            self._on_capacity_changed()
+            cap = self.get_selected_capacity()
+            self.btn_patch.configure(text=f"✔  Apply Co-op Patch ({cap} Players)")
+            self._log(f"Switched to Host Mode: Configuring lobby capacity ({cap} Players) + Camera Fix.", "INFO")
+
     def _on_capacity_changed(self, event=None):
         selected_str = self.cap_var.get()
         try:
             n = int(selected_str.split()[0])
+            if n == 2:
+                if self.mode_var.get() != "guest":
+                    self.mode_var.set("guest")
+                    self._on_mode_changed()
+                    return
+            else:
+                if self.mode_var.get() != "host":
+                    self.mode_var.set("host")
+                    self.cap_combo.configure(state="readonly")
+
             cfg = pe.CAPACITY_CONFIG.get(n, {})
             desc = cfg.get("description", "")
             badge = cfg.get("badge", "")
@@ -335,6 +398,8 @@ class CoOpPatcherGUI:
 
             color = "#155724" if tier in ("VERIFIED", "ORIGINAL") else "#856404"
             self.cap_desc_lbl.configure(text=f"[{badge}] {desc}", foreground=color)
+            if self.mode_var.get() == "host":
+                self.btn_patch.configure(text=f"✔  Apply Co-op Patch ({n} Players)")
         except Exception:
             pass
 
@@ -347,6 +412,8 @@ class CoOpPatcherGUI:
             self._log("Notice: Cutscene Camera Fix disabled. Additional players (Players 3 & 4) will experience disrupted cutscene cameras unless patched locally.", "WARNING")
 
     def get_selected_capacity(self) -> int:
+        if self.mode_var.get() == "guest":
+            return 2
         selected_str = self.cap_var.get()
         try:
             return int(selected_str.split()[0])
@@ -412,8 +479,20 @@ class CoOpPatcherGUI:
         else:
             self.camera_var.set(self.camera_var.get())
 
-        # Synchronize capacity selector if detected
-        if cap in range(2, 17):
+        # Synchronize mode and capacity selector if detected
+        if status == "ORIGINAL_CAM_FIX":
+            self.mode_var.set("guest")
+            self._on_mode_changed()
+        elif status.startswith("PATCHED_TRI_GATE"):
+            self.mode_var.set("host")
+            self.cap_combo.configure(state="readonly")
+            if cap in range(3, 17):
+                for opt in self.cap_options:
+                    if opt.startswith(f"{cap} Players"):
+                        self.cap_var.set(opt)
+                        self._on_capacity_changed()
+                        break
+        elif cap in range(2, 17):
             for opt in self.cap_options:
                 if opt.startswith(f"{cap} Players"):
                     self.cap_var.set(opt)
@@ -537,14 +616,25 @@ class CoOpPatcherGUI:
                 callback=self._log,
             )
             if ok:
-                cam_msg = "with Cutscene Camera Fix" if cam_fix else "without Camera Fix"
-                self._log("Configuration complete! Start Far Cry 5 and enjoy co-op.", "SUCCESS")
-                self.root.after(0, lambda: messagebox.showinfo(
-                    "Patch Successful",
-                    f"Configuration successfully applied for {cap} players ({cam_msg})!\n\n"
-                    f"A verified backup of your pristine game binary is preserved.\n"
-                    f"Launch Far Cry 5 to play.",
-                ))
+                if cap == 2 and cam_fix:
+                    self._log("Guest Configuration Complete: Cutscene Camera Fix applied, original lobby preserved.", "SUCCESS")
+                    self.root.after(0, lambda: messagebox.showinfo(
+                        "Camera Patch Successful",
+                        "Cutscene Camera Fix successfully applied!\n\n"
+                        "• Your campaign lobby capacity remains original (2 players).\n"
+                        "• You can now join any 3-player or 4-player co-op host with full cutscene cameras.\n"
+                        "• A verified backup of your pristine game binary is preserved.\n\n"
+                        "Launch Far Cry 5 to play.",
+                    ))
+                else:
+                    cam_msg = "with Cutscene Camera Fix" if cam_fix else "without Camera Fix"
+                    self._log("Configuration complete! Start Far Cry 5 and enjoy co-op.", "SUCCESS")
+                    self.root.after(0, lambda: messagebox.showinfo(
+                        "Patch Successful",
+                        f"Configuration successfully applied for {cap} players ({cam_msg})!\n\n"
+                        f"A verified backup of your pristine game binary is preserved.\n"
+                        f"Launch Far Cry 5 to play.",
+                    ))
             else:
                 self.root.after(0, lambda: messagebox.showerror(
                     "Patch Failed",

@@ -39,6 +39,7 @@ Examples:
     parser.add_argument("--gui", action="store_true", help="Launch the graphical interface (default when no args)")
     parser.add_argument("--status", action="store_true", help="Inspect binary status and print diagnostics")
     parser.add_argument("--patch", type=int, choices=list(range(2, 17)), metavar="N", help="Apply patch for N players (2=Pristine/Guest, 3-16=Tri-Gate)")
+    parser.add_argument("--camera-only", action="store_true", help="Apply ONLY the cutscene camera fix (preserves original 2-player lobby; ideal for guest players)")
     parser.add_argument("--camera-fix", dest="camera_fix", action="store_true", default=None, help="Apply cinematic cutscene camera fix (for Host and Guests)")
     parser.add_argument("--no-camera-fix", dest="camera_fix", action="store_false", help="Disable cinematic cutscene camera fix")
     parser.add_argument("--restore", action="store_true", help="Restore binary to pristine original 2-player state")
@@ -69,6 +70,17 @@ Examples:
         print(f"Game Running: {info['game_running']}")
         print(f"Backup Valid: {info['backup_valid']}")
         return
+
+    if args.camera_only:
+        print("\n[INFO] Mode: Guest / Camera Only")
+        print("[INFO] Applying Cutscene Camera Fix ONLY — Original 2-player lobby capacity preserved.\n")
+        ok = pe.apply_patch(
+            target_dll,
+            players=2,
+            camera_fix=True,
+            force=args.force,
+        )
+        sys.exit(0 if ok else 1)
 
     if args.patch is not None or args.camera_fix is not None:
         if args.camera_fix is False:

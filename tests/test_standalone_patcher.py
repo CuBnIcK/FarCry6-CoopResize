@@ -51,6 +51,22 @@ class TestStandalonePatcher(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(pe.get_file_sha256(self.dll_path), pe.KNOWN_TRI_CAM_HASHES[4])
 
+    def test_guest_camera_only_mode(self):
+        # Guest Mode: only camera fix is applied, lobby capacity stays 2
+        ok = pe.apply_patch(self.dll_path, players=2, camera_fix=True)
+        self.assertTrue(ok)
+        self.assertEqual(pe.get_file_sha256(self.dll_path), pe.PATCHED_CAM_ONLY_SHA256)
+
+        info = pe.inspect_binary(self.dll_path)
+        self.assertEqual(info["status"], "ORIGINAL_CAM_FIX")
+        self.assertEqual(info["capacity"], 2)
+        self.assertTrue(info["camera_fix_applied"])
+
+        # Revert back to pristine
+        ok = pe.restore_original(self.dll_path)
+        self.assertTrue(ok)
+        self.assertEqual(pe.get_file_sha256(self.dll_path), pe.ORIGINAL_SHA256)
+
     def test_restore(self):
         pe.apply_patch(self.dll_path, players=3)
         ok = pe.restore_original(self.dll_path)
