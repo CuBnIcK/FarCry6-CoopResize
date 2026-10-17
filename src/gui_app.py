@@ -2,7 +2,8 @@
 """
 Far Cry 5 Co-op Patcher — Standalone Windows GUI Application
 Provides a native, modern, responsive Windows interface for configuring
-Far Cry 5 3-Player (and experimental 4-16 Player) Campaign Co-op.
+Far Cry 5 3-Player (and experimental 4-16 Player) Campaign Co-op and
+Cutscene Camera Takeover for extra participants.
 """
 
 import os
@@ -18,15 +19,15 @@ from tkinter import ttk, messagebox, filedialog
 
 import patch_engine as pe
 
-APP_TITLE = "Far Cry 5 — Campaign Co-op Host Patcher"
-APP_VERSION = "v1.0.0"
+APP_TITLE = "Far Cry 5 — Campaign Co-op Patcher"
+APP_VERSION = "v1.1.0"
 
 class CoOpPatcherGUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title(f"{APP_TITLE} {APP_VERSION}")
-        self.root.minsize(720, 680)
-        self.root.geometry("780x720")
+        self.root.minsize(740, 720)
+        self.root.geometry("800x740")
 
         # Application state
         self.current_dll_path: Optional[Path] = None
@@ -49,7 +50,6 @@ class CoOpPatcherGUI:
 
     def _setup_styles(self):
         self.style = ttk.Style()
-        # Use native 'vista' or 'clam'
         available_themes = self.style.theme_names()
         if "vista" in available_themes:
             self.style.theme_use("vista")
@@ -76,7 +76,7 @@ class CoOpPatcherGUI:
         title_lbl.pack(anchor=tk.W)
         sub_lbl = ttk.Label(
             header_frame,
-            text=f"Enables 3+ Player Campaign Co-op on your host installation • {APP_VERSION} (Tri-Gate Architecture)",
+            text=f"Campaign Co-op Capacity (Tri-Gate) & Cutscene Camera Fix • {APP_VERSION}",
             style="Subtitle.TLabel",
             foreground="#555555",
         )
@@ -93,7 +93,6 @@ class CoOpPatcherGUI:
             pady=4,
         )
         self.alert_lbl.pack(fill=tk.X)
-        # Will pack/unpack dynamically
 
         # 2. Installation Path Frame
         path_group = ttk.LabelFrame(main_frame, text=" Far Cry 5 Game Installation ", padding=10)
@@ -128,7 +127,7 @@ class CoOpPatcherGUI:
         self.status_badge_lbl.pack(side=tk.LEFT)
 
         # Message row
-        self.status_msg_lbl = ttk.Label(status_group, text="Select or auto-detect a Far Cry 5 installation.", wraplength=700)
+        self.status_msg_lbl = ttk.Label(status_group, text="Select or auto-detect a Far Cry 5 installation.", wraplength=720)
         self.status_msg_lbl.pack(anchor=tk.W, pady=(0, 4))
 
         # SHA-256 and Backup status
@@ -143,39 +142,62 @@ class CoOpPatcherGUI:
         self.backup_lbl.pack(anchor=tk.W, pady=(2, 0))
 
         # 4. Patch Configuration Frame
-        config_group = ttk.LabelFrame(main_frame, text=" Co-op Host Configuration ", padding=10)
+        config_group = ttk.LabelFrame(main_frame, text=" Co-op Configuration ", padding=10)
         config_group.pack(fill=tk.X, pady=(0, 8))
 
+        # Row A: Capacity Selector
         cap_row = ttk.Frame(config_group)
         cap_row.pack(fill=tk.X, pady=(0, 4))
 
-        ttk.Label(cap_row, text="Target Capacity (Players): ", style="Bold.TLabel").pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Label(cap_row, text="Target Capacity: ", style="Bold.TLabel").pack(side=tk.LEFT, padx=(0, 8))
 
-        # Capacity dropdown
         self.cap_options = [
-            f"{n} Players [{pe.CAPACITY_CONFIG[n]['badge']}]" for n in range(3, 17)
+            f"{n} Players [{pe.CAPACITY_CONFIG[n]['badge']}]" for n in range(2, 17)
         ]
-        self.cap_var = tk.StringVar(value=self.cap_options[0])  # Default: 3 Players
+        # Default: 3 Players (index 1)
+        self.cap_var = tk.StringVar(value=self.cap_options[1])
         self.cap_combo = ttk.Combobox(
             cap_row,
             textvariable=self.cap_var,
             values=self.cap_options,
             state="readonly",
-            width=36,
+            width=38,
             font=("Segoe UI", 9),
         )
         self.cap_combo.pack(side=tk.LEFT)
         self.cap_combo.bind("<<ComboboxSelected>>", self._on_capacity_changed)
 
-        # Tier & Description display
+        # Capacity description label
         self.cap_desc_lbl = ttk.Label(
             config_group,
             text=pe.CAPACITY_CONFIG[3]["description"],
-            wraplength=700,
+            wraplength=720,
             foreground="#155724",
             font=("Segoe UI", 9, "italic"),
         )
-        self.cap_desc_lbl.pack(anchor=tk.W, pady=(4, 0))
+        self.cap_desc_lbl.pack(anchor=tk.W, pady=(2, 6))
+
+        # Row B: Camera Fix Checkbox
+        cam_row = ttk.Frame(config_group)
+        cam_row.pack(fill=tk.X, pady=(4, 0))
+
+        self.camera_var = tk.BooleanVar(value=False)
+        self.chk_camera = ttk.Checkbutton(
+            cam_row,
+            text="Fix Cutscene Cameras (Experimental)",
+            variable=self.camera_var,
+            command=self._on_camera_toggled,
+        )
+        self.chk_camera.pack(side=tk.LEFT)
+
+        self.cam_sub_lbl = ttk.Label(
+            config_group,
+            text="Enables cutscene camera takeover for Guests (Players 3 & 4). Recommended for all locally patchable Windows participants (Host and Guests).",
+            wraplength=720,
+            foreground="#555555",
+            font=("Segoe UI", 8),
+        )
+        self.cam_sub_lbl.pack(anchor=tk.W, pady=(0, 4))
 
         # 5. Action Buttons Frame
         action_row = ttk.Frame(main_frame)
@@ -303,7 +325,6 @@ class CoOpPatcherGUI:
 
     def _on_capacity_changed(self, event=None):
         selected_str = self.cap_var.get()
-        # Parse player count
         try:
             n = int(selected_str.split()[0])
             cfg = pe.CAPACITY_CONFIG.get(n, {})
@@ -311,10 +332,15 @@ class CoOpPatcherGUI:
             badge = cfg.get("badge", "")
             tier = cfg.get("tier", "")
 
-            color = "#155724" if tier == "VERIFIED" else "#856404"
+            color = "#155724" if tier in ("VERIFIED", "ORIGINAL") else "#856404"
             self.cap_desc_lbl.configure(text=f"[{badge}] {desc}", foreground=color)
         except Exception:
             pass
+
+    def _on_camera_toggled(self):
+        checked = self.camera_var.get()
+        state_str = "Enabled" if checked else "Disabled"
+        self._log(f"Cutscene camera fix option set to: {state_str}", "INFO")
 
     def get_selected_capacity(self) -> int:
         selected_str = self.cap_var.get()
@@ -358,7 +384,8 @@ class CoOpPatcherGUI:
         self._log(f"Inspecting binary: {self.current_dll_path}", "INFO")
         info = pe.inspect_binary(self.current_dll_path)
         self.current_info = info
-        self._log(f"Status: {info['status']} | SHA-256: {info['sha256']}", "INFO")
+        cam_info = "Applied" if info.get("camera_fix_applied") else "Not Applied"
+        self._log(f"Status: {info['status']} | Capacity: {info.get('capacity')}P | Camera Fix: {cam_info} | SHA-256: {info['sha256']}", "INFO")
 
     def _refresh_ui_status(self):
         info = self.current_info
@@ -369,18 +396,37 @@ class CoOpPatcherGUI:
         sha = info.get("sha256", "N/A")
         msg = info.get("message", "")
         cap = info.get("capacity")
+        cam_applied = info.get("camera_fix_applied", False)
+
+        # Synchronize UI checkbox with current binary state
+        self.camera_var.set(cam_applied)
+
+        # Synchronize capacity selector if detected
+        if cap in range(2, 17):
+            for opt in self.cap_options:
+                if opt.startswith(f"{cap} Players"):
+                    self.cap_var.set(opt)
+                    self._on_capacity_changed()
+                    break
 
         # Format Badge
         if status == "ORIGINAL_PRISTINE":
             self.status_badge_lbl.configure(text="PRISTINE (2 Players)", foreground="#0d6efd")
+        elif status == "ORIGINAL_CAM_FIX":
+            self.status_badge_lbl.configure(text="PRISTINE (2P) + CAMERA FIX", foreground="#198754")
         elif status == "PATCHED_TRI_GATE":
             badge_text = f"TRI-GATE PATCHED ({cap} Players)"
+            color = "#198754" if cap == 3 else "#fd7e14"
+            self.status_badge_lbl.configure(text=badge_text, foreground=color)
+        elif status == "PATCHED_TRI_GATE_CAM":
+            badge_text = f"TRI-GATE ({cap}P) + CAMERA FIX"
             color = "#198754" if cap == 3 else "#fd7e14"
             self.status_badge_lbl.configure(text=badge_text, foreground=color)
         elif status == "PATCHED_TRI_V1":
             self.status_badge_lbl.configure(text="TRI-GATE V1 (Needs Upgrade)", foreground="#ffc107")
         elif status.startswith("PATCHED_"):
-            self.status_badge_lbl.configure(text=f"{status} ({cap}P)", foreground="#ffc107")
+            cam_tag = " + CAM" if cam_applied else ""
+            self.status_badge_lbl.configure(text=f"{status} ({cap}P){cam_tag}", foreground="#ffc107")
         else:
             self.status_badge_lbl.configure(text="UNKNOWN / MODIFIED", foreground="#dc3545")
 
@@ -409,7 +455,6 @@ class CoOpPatcherGUI:
             filetypes=[("Far Cry 5 Files", "FC_m64.dll;FarCry5.exe"), ("All Files", "*.*")],
         )
         if not selected:
-            # Let user choose folder
             folder = filedialog.askdirectory(title="Or Select Far Cry 5 Game Folder")
             if folder:
                 dll = Path(folder) / "bin" / "FC_m64.dll"
@@ -446,7 +491,7 @@ class CoOpPatcherGUI:
             return
 
         cap = self.get_selected_capacity()
-        tier_info = pe.CAPACITY_CONFIG.get(cap, {})
+        cam_fix = self.camera_var.get()
 
         if cap > 3:
             confirm = messagebox.askyesno(
@@ -463,15 +508,17 @@ class CoOpPatcherGUI:
             ok = pe.apply_patch(
                 self.current_dll_path,
                 players=cap,
+                camera_fix=cam_fix,
                 callback=self._log,
             )
             if ok:
-                self._log("Ready to host! Start Far Cry 5 and enjoy co-op.", "SUCCESS")
+                cam_msg = "with Cutscene Camera Fix" if cam_fix else "without Camera Fix"
+                self._log("Configuration complete! Start Far Cry 5 and enjoy co-op.", "SUCCESS")
                 self.root.after(0, lambda: messagebox.showinfo(
                     "Patch Successful",
-                    f"Tri-Gate Co-op patch successfully applied for {cap} players!\n\n"
+                    f"Configuration successfully applied for {cap} players ({cam_msg})!\n\n"
                     f"A verified backup of your pristine game binary is preserved.\n"
-                    f"Launch Far Cry 5 to host your campaign co-op session.",
+                    f"Launch Far Cry 5 to play.",
                 ))
             else:
                 self.root.after(0, lambda: messagebox.showerror(

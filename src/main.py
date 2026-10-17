@@ -23,22 +23,26 @@ def attach_console_if_cli():
 def run_cli():
     attach_console_if_cli()
     parser = argparse.ArgumentParser(
-        description="Far Cry 5 Campaign Co-op Host Patcher (Tri-Gate Architecture)",
+        description="Far Cry 5 Campaign Co-op & Cutscene Camera Patcher",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   FC5CampaignCoopPatcher.exe
   FC5CampaignCoopPatcher.exe --status
   FC5CampaignCoopPatcher.exe --patch 3
-  FC5CampaignCoopPatcher.exe --patch 4
+  FC5CampaignCoopPatcher.exe --patch 3 --camera-fix
+  FC5CampaignCoopPatcher.exe --camera-fix
+  FC5CampaignCoopPatcher.exe --no-camera-fix
   FC5CampaignCoopPatcher.exe --restore
         """,
     )
     parser.add_argument("--gui", action="store_true", help="Launch the graphical interface (default when no args)")
     parser.add_argument("--status", action="store_true", help="Inspect binary status and print diagnostics")
-    parser.add_argument("--patch", type=int, choices=list(range(3, 17)), metavar="N", help="Apply Tri-Gate patch for N players (3-16)")
+    parser.add_argument("--patch", type=int, choices=list(range(2, 17)), metavar="N", help="Apply patch for N players (2=Pristine/Guest, 3-16=Tri-Gate)")
+    parser.add_argument("--camera-fix", dest="camera_fix", action="store_true", default=None, help="Apply cinematic cutscene camera fix (for Host and Guests)")
+    parser.add_argument("--no-camera-fix", dest="camera_fix", action="store_false", help="Disable cinematic cutscene camera fix")
     parser.add_argument("--restore", action="store_true", help="Restore binary to pristine original 2-player state")
-    parser.add_argument("--force", action="store_true", help="Overwrite unrecognized modifications during restore")
+    parser.add_argument("--force", action="store_true", help="Overwrite unrecognized modifications during restore or patch")
     parser.add_argument("--binary", type=Path, help="Explicit path to FC_m64.dll (auto-detects if omitted)")
 
     args = parser.parse_args()
@@ -60,12 +64,19 @@ Examples:
         print(f"Message:      {info['message']}")
         print(f"SHA-256:      {info['sha256']}")
         print(f"Capacity:     {info['capacity']} players")
+        cam_text = "Applied" if info.get('camera_fix_applied') else "Not Applied"
+        print(f"Camera Fix:   {cam_text}")
         print(f"Game Running: {info['game_running']}")
         print(f"Backup Valid: {info['backup_valid']}")
         return
 
-    if args.patch:
-        ok = pe.apply_patch(target_dll, players=args.patch, force=args.force)
+    if args.patch is not None or args.camera_fix is not None:
+        ok = pe.apply_patch(
+            target_dll,
+            players=args.patch,
+            camera_fix=args.camera_fix,
+            force=args.force,
+        )
         sys.exit(0 if ok else 1)
 
     if args.restore:
@@ -73,7 +84,6 @@ Examples:
         sys.exit(0 if ok else 1)
 
 def main():
-    # If launched with arguments other than just the executable name, check if GUI is requested or CLI
     if len(sys.argv) > 1 and not (len(sys.argv) == 2 and sys.argv[1] == "--gui"):
         run_cli()
     else:
