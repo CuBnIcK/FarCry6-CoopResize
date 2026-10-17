@@ -71,6 +71,10 @@ Examples:
         return
 
     if args.patch is not None or args.camera_fix is not None:
+        if args.camera_fix is False:
+            print("\n[WARNING] Cutscene Camera Fix is DISABLED.")
+            print("• Extra players (Players 3 and 4) will experience disrupted cutscenes (audio plays, but camera remains in 1st-person).")
+            print("• Every participating player in your co-op session must install this patch locally to avoid cutscene camera bugs.\n")
         ok = pe.apply_patch(
             target_dll,
             players=args.patch,

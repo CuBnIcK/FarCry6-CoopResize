@@ -34,15 +34,22 @@ class TestStandalonePatcher(unittest.TestCase):
         info = pe.inspect_binary(self.dll_path)
         self.assertEqual(info["status"], "ORIGINAL_PRISTINE")
 
-    def test_tri_gate_3p(self):
+    def test_tri_gate_3p_default(self):
+        # Default behavior: camera fix enabled automatically
         ok = pe.apply_patch(self.dll_path, players=3)
+        self.assertTrue(ok)
+        self.assertEqual(pe.get_file_sha256(self.dll_path), pe.KNOWN_TRI_CAM_HASHES[3])
+
+    def test_tri_gate_3p_without_camera(self):
+        # Explicit disable
+        ok = pe.apply_patch(self.dll_path, players=3, camera_fix=False)
         self.assertTrue(ok)
         self.assertEqual(pe.get_file_sha256(self.dll_path), pe.KNOWN_TRI_HASHES[3])
 
-    def test_tri_gate_4p(self):
+    def test_tri_gate_4p_default(self):
         ok = pe.apply_patch(self.dll_path, players=4)
         self.assertTrue(ok)
-        self.assertEqual(pe.get_file_sha256(self.dll_path), pe.KNOWN_TRI_HASHES[4])
+        self.assertEqual(pe.get_file_sha256(self.dll_path), pe.KNOWN_TRI_CAM_HASHES[4])
 
     def test_restore(self):
         pe.apply_patch(self.dll_path, players=3)

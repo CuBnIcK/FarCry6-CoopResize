@@ -34,6 +34,7 @@ class CoOpPatcherGUI:
         self.current_info: dict = {}
         self.log_queue = queue.Queue()
         self.is_busy = False
+        self.user_manually_toggled_camera = False
 
         # Configure styles
         self._setup_styles()
@@ -181,10 +182,10 @@ class CoOpPatcherGUI:
         cam_row = ttk.Frame(config_group)
         cam_row.pack(fill=tk.X, pady=(4, 0))
 
-        self.camera_var = tk.BooleanVar(value=False)
+        self.camera_var = tk.BooleanVar(value=True)  # Automatically checked by default!
         self.chk_camera = ttk.Checkbutton(
             cam_row,
-            text="Fix Cutscene Cameras (Experimental)",
+            text="Fix Cutscene Cameras (Recommended / Experimental)",
             variable=self.camera_var,
             command=self._on_camera_toggled,
         )
@@ -192,9 +193,9 @@ class CoOpPatcherGUI:
 
         self.cam_sub_lbl = ttk.Label(
             config_group,
-            text="Enables cutscene camera takeover for Guests (Players 3 & 4). Recommended for all locally patchable Windows participants (Host and Guests).",
+            text="Enables cutscene camera takeover for extra players (Players 3 & 4). Recommended for all co-op friends on Windows to prevent camera bugs.",
             wraplength=720,
-            foreground="#555555",
+            foreground="#155724",
             font=("Segoe UI", 8),
         )
         self.cam_sub_lbl.pack(anchor=tk.W, pady=(0, 4))
@@ -338,9 +339,12 @@ class CoOpPatcherGUI:
             pass
 
     def _on_camera_toggled(self):
+        self.user_manually_toggled_camera = True
         checked = self.camera_var.get()
         state_str = "Enabled" if checked else "Disabled"
         self._log(f"Cutscene camera fix option set to: {state_str}", "INFO")
+        if not checked:
+            self._log("Notice: Cutscene Camera Fix disabled. Additional players (Players 3 & 4) will experience disrupted cutscene cameras unless patched locally.", "WARNING")
 
     def get_selected_capacity(self) -> int:
         selected_str = self.cap_var.get()
@@ -398,8 +402,15 @@ class CoOpPatcherGUI:
         cap = info.get("capacity")
         cam_applied = info.get("camera_fix_applied", False)
 
-        # Synchronize UI checkbox with current binary state
-        self.camera_var.set(cam_applied)
+        # Synchronize UI checkbox:
+        # If binary already has camera fix, keep checked.
+        # If user has not manually interacted with the checkbox, keep it checked by default!
+        if cam_applied:
+            self.camera_var.set(True)
+        elif not self.user_manually_toggled_camera:
+            self.camera_var.set(True)
+        else:
+            self.camera_var.set(self.camera_var.get())
 
         # Synchronize capacity selector if detected
         if cap in range(2, 17):
@@ -492,6 +503,20 @@ class CoOpPatcherGUI:
 
         cap = self.get_selected_capacity()
         cam_fix = self.camera_var.get()
+
+        # Warning when Cutscene Camera Fix is disabled
+        if not cam_fix:
+            confirm_cam = messagebox.askyesno(
+                "Cutscene Camera Warning",
+                "You have unchecked 'Fix Cutscene Cameras'.\n\n"
+                "⚠️ Notice regarding cinematic camera behavior:\n\n"
+                "• Without this patch, additional players (Players 3 and 4) will experience disrupted cutscenes during story missions and outpost liberations. They will hear audio and dialogue, but their camera will remain stuck in first-person gameplay view instead of switching to the cinematic scene.\n\n"
+                "• For cutscenes to work properly without bugs, EVERY participating friend in your co-op session must apply this patch locally on their own game installation.\n\n"
+                "Are you sure you want to proceed without the Cutscene Camera Fix?",
+                icon="warning",
+            )
+            if not confirm_cam:
+                return
 
         if cap > 3:
             confirm = messagebox.askyesno(

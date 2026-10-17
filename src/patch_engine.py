@@ -627,7 +627,12 @@ def apply_patch(
     if target_players is None:
         target_players = 3
 
-    target_camera_fix = camera_fix if camera_fix is not None else info["camera_fix_applied"]
+    if camera_fix is not None:
+        target_camera_fix = camera_fix
+    elif info["status"] == "ORIGINAL_PRISTINE":
+        target_camera_fix = True  # Automatically enabled by default!
+    else:
+        target_camera_fix = info["camera_fix_applied"]
 
     if not (2 <= target_players <= 16):
         log(f"REFUSED: Player capacity {target_players} is outside supported range [2..16]", "ERROR")
