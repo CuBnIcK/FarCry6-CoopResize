@@ -11,9 +11,9 @@ We've tested three-player sessions on two different host PCs. Players could see 
 2. **Close Far Cry 5 completely.**
 3. Run the patcher on the PC that will host the game.
 4. Select your installation (or browse to `Far Cry 5\bin\FC_m64.dll`).
-5. Choose **3 Players** (or 4 Players).
-6. *(Optional)* Check **Fix Cutscene Cameras (Experimental)**.
-7. Click **Apply Co-op Patch**.
+5. Ensure **Expand Campaign Co-op** is checked and set to **3 Players** (or 4 Players).
+6. *(Optional)* Check **Fix Cutscene Cameras (Experimental — Not Yet Tested)**.
+7. Click **Apply Co-op Patch (3 Players)**.
 8. Launch the campaign and invite your friends.
 
 ### If you are a Guest (Players 2, 3, or 4 on Windows PC):
@@ -21,13 +21,14 @@ We've tested three-player sessions on two different host PCs. Players could see 
 2. **Close Far Cry 5 completely.**
 3. Run the patcher on your PC.
 4. Select your installation (`Far Cry 5\bin\FC_m64.dll`).
-5. Choose **2 Players [Pristine / Guest Only]** (or keep your capacity as-is).
-6. Check **Fix Cutscene Cameras (Experimental)**.
-7. Click **Apply Co-op Patch**.
+5. **Uncheck** "Expand Campaign Co-op" (leaves your lobby untouched at original 2 players).
+6. Check **Fix Cutscene Cameras (Experimental — Not Yet Tested)**.
+7. Click **Apply Camera Fix Only**.
 
-### Important Notes:
+### ⚠️ Important Experimental Notice:
+- **Cutscene Camera Fix is EXPERIMENTAL and NOT YET RUNTIME-TESTED:**
+  While 3-player campaign co-op (Tri-Gate) is fully verified and proven in live multiplayer gameplay, the Cutscene Camera Fix (`CPlayerCameraTrack` patch) is **experimental and has not yet been verified in a live 3+ player co-op game session**. It is provided as an experimental candidate for testing. Please report your findings!
 - **GeForce NOW Guests:** Players connecting via NVIDIA GeForce NOW cannot install local DLL patches because the game runs on cloud virtual machines without local file access. GeForce NOW players can join and play the 3P/4P campaign normally and will hear cutscene dialogue and audio, but their view camera will remain in 1st-person gameplay mode during cinematics.
-- **Experimental Status:** While 3-player co-op campaign gameplay is fully verified and proven in live gameplay, the cutscene camera fix for additional players remains an experimental feature until extensive live testing confirms stability across all campaign sequences and outpost liberations.
 - **Both Host and Guests:** The host may install both the capacity patch and camera fix. Guest players on Windows PCs only need to install the camera fix.
 
 ## Undo the patch

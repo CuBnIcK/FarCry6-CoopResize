@@ -186,7 +186,7 @@ class CoOpPatcherGUI:
         self.camera_var = tk.BooleanVar(value=True)
         self.chk_camera = ttk.Checkbutton(
             opt2_frame,
-            text="Fix Cutscene Cameras",
+            text="Fix Cutscene Cameras (Experimental — Not Yet Tested)",
             variable=self.camera_var,
             command=self._on_camera_toggled,
         )
@@ -194,8 +194,8 @@ class CoOpPatcherGUI:
 
         self.cam_sub_lbl = ttk.Label(
             config_group,
-            text="Fixes cutscene cameras for Players 3 & 4 so they don't remain in 1st-person. (Recommended for Host and Guests).",
-            foreground="#155724",
+            text="Enables cinematic camera for extra players. Experimental: Not yet verified in live multiplayer gameplay.",
+            foreground="#856404",
             font=("Segoe UI", 8),
         )
         self.cam_sub_lbl.pack(anchor=tk.W, padx=(22, 0), pady=(0, 2))
