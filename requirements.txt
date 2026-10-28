@@ -1,3 +1,2 @@
-pefile>=2023.2.7
+# Tests only, the patcher itself needs nothing beyond the Python standard library
 capstone>=5.0.0
-pyinstaller>=6.0.0
